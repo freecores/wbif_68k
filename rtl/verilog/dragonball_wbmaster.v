@@ -34,13 +34,16 @@
 
 //  CVS Log
 //
-//  $Id: dragonball_wbmaster.v,v 1.1.1.1 2002-12-03 09:02:31 rherveille Exp $
+//  $Id: dragonball_wbmaster.v,v 1.2 2002-12-22 16:09:33 rherveille Exp $
 //
-//  $Date: 2002-12-03 09:02:31 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-12-22 16:09:33 $
+//  $Revision: 1.2 $
 //  $Author: rherveille $
 //  $Locker:  $
 //  $State: Exp $
+//
+// Change History:
+//               $Log: not supported by cvs2svn $
 //
 
 
@@ -54,7 +57,7 @@
 `include "timescale.v"
 // synopsys translate_on
 
-module dragonix_wbmaster(
+module dragonball_wbmaster(
   clk, reset_n,
   a, cs_n, d, lwe_n, uwe_n, oe_n, dtack_n, berr,
   clk_o, rst_o, cyc_o, stb_o, adr_o, sel_o, we_o, dat_o, dat_i, ack_i, err_i
@@ -102,8 +105,8 @@ module dragonix_wbmaster(
   reg [adr_hi:1] adr_o;
   reg [     1:0] sel_o;
   reg            we_o;
-  reg [    15:0] dat_o;
   reg            dtack;
+  reg [    15:0] sdat_i;
 
   wire cs  = !cs_n & !(ack_i | err_i | dtack);   // generate active high chip select signal
   wire lwe = !lwe_n;                             // generate active high lo_write_enable signal
@@ -112,36 +115,39 @@ module dragonix_wbmaster(
 
   assign clk_o = clk;                            // wishbone clock == external clock
   assign rst_o = reset_n;                        // reset == external reset
-  
+
   assign berr = err_i;
 
   always @(posedge clk or negedge reset_n)
     if (!reset_n)
       begin
-          cyc_o <= #1 1'b0;
-          stb_o <= #1 1'b0;
-          adr_o <= #1 {{adr_hi-1}{1'b0}};
-          sel_o <= #1 2'b00;
-          we_o  <= #1 1'b0;
-          dat_o <= #1 16'h0;
-          dtack <= #1 1'b0;
+          cyc_o  <= #1 1'b0;
+          stb_o  <= #1 1'b0;
+          adr_o  <= #1 {{adr_hi-1}{1'b0}};
+          sel_o  <= #1 2'b00;
+          we_o   <= #1 1'b0;
+          dtack  <= #1 1'b0;
+		  sdat_i <= #1 16'h0;
       end
     else
       begin
-          cyc_o <= #1 cs;                        // assert cyc_o when CS asserted
-          stb_o <= #1 cs;                        // assert stb_o when CS asserted
+          cyc_o  <= #1 cs;                       // assert cyc_o when CS asserted
+          stb_o  <= #1 cs;                       // assert stb_o when CS asserted
 
-          adr_o <= #1 a;                         // address == external address
-          sel_o <= #1 oe ? 2'b11 : {uwe, lwe};   // generate select lines;
+          adr_o  <= #1 a;                        // address == external address
+          sel_o  <= #1 oe ? 2'b11 : {uwe, lwe};  // generate select lines;
                                                  // read (oe asserted): SEL[1:0] = '11'
                                                  // write (oe negated): SEL[1:0] = 'uwe, lwe'
-          we_o  <= #1 uwe | lwe;                 // write == uwe OR lwe asserted
-          dat_o <= #1 d;                         // dat_o == external data
+          we_o   <= #1 uwe | lwe;                // write == uwe OR lwe asserted
 
-          dtack <= ack_i & !dtack;               // generate DTACK signal
+          dtack  <= #1 ack_i & !dtack;           // generate DTACK signal
+
+		  sdat_i <= #1 dat_i;                    // synchronize dat_i
       end
 
-  assign d       = (cs & oe) ? dat_i : 16'hzzzz; // generate databus tri-state buffers
+  assign dat_o   = d;                            // dat_o==external databus (not synchronised!!)
+
+  assign d       = (~cs_n & oe) ? sdat_i : 16'hzzzz; // generate databus tri-state buffers
   assign dtack_n = !dtack;                       // generate active low DTACK signal
 
 endmodule
