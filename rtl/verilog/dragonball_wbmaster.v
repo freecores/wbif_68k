@@ -34,16 +34,19 @@
 
 //  CVS Log
 //
-//  $Id: dragonball_wbmaster.v,v 1.2 2002-12-22 16:09:33 rherveille Exp $
+//  $Id: dragonball_wbmaster.v,v 1.3 2003-01-09 16:46:14 rherveille Exp $
 //
-//  $Date: 2002-12-22 16:09:33 $
-//  $Revision: 1.2 $
+//  $Date: 2003-01-09 16:46:14 $
+//  $Revision: 1.3 $
 //  $Author: rherveille $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.2  2002/12/22 16:09:33  rherveille
+//               Timing enhancement bug fixes
+//
 //
 
 
@@ -127,7 +130,7 @@ module dragonball_wbmaster(
           sel_o  <= #1 2'b00;
           we_o   <= #1 1'b0;
           dtack  <= #1 1'b0;
-		  sdat_i <= #1 16'h0;
+          sdat_i <= #1 16'h0;
       end
     else
       begin
@@ -142,7 +145,7 @@ module dragonball_wbmaster(
 
           dtack  <= #1 ack_i & !dtack;           // generate DTACK signal
 
-		  sdat_i <= #1 dat_i;                    // synchronize dat_i
+          sdat_i <= #1 dat_i;                    // synchronize dat_i
       end
 
   assign dat_o   = d;                            // dat_o==external databus (not synchronised!!)
